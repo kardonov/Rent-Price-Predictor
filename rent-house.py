@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import os
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.compose import TransformedTargetRegressor
 from sklearn.model_selection import train_test_split
@@ -66,67 +67,43 @@ st.markdown("""
 
 # ── Load & Preprocess Data ────────────────────────────────────────────────────
 @st.cache_data
-def load_and_preprocess():
+def load_and_preprocess(csv_path: str = "House_Rent_Dataset_Indonesia.csv"):
     """
-    Generates a synthetic dataset that mirrors the House_Rent_Dataset schema
-    so the app runs standalone without needing the original CSV.
+    Load dataset asli jika CSV tersedia, fallback ke data sintetik.
     """
-    np.random.seed(42)
-    n = 4700
+    if os.path.exists(csv_path):
+        df = pd.read_csv(csv_path)
 
-    cities = ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", "Kolkata"]
-    city_w = [0.22, 0.20, 0.18, 0.15, 0.13, 0.12]
-    furnishing = ["Unfurnished", "Semi-Furnished", "Furnished"]
-    tenant_type = ["Bachelors", "Family", "Bachelors/Family"]
-    area_locality_map = {
-        "Mumbai": ["Andheri", "Bandra", "Dadar", "Kurla", "Malad"],
-        "Delhi": ["Dwarka", "Rohini", "Saket", "Lajpat Nagar", "Pitampura"],
-        "Bangalore": ["Koramangala", "Whitefield", "HSR Layout", "Indiranagar", "BTM Layout"],
-        "Hyderabad": ["Banjara Hills", "Jubilee Hills", "Gachibowli", "Madhapur", "Kondapur"],
-        "Chennai": ["Adyar", "Anna Nagar", "T. Nagar", "Velachery", "Perambur"],
-        "Kolkata": ["Salt Lake", "New Town", "Tollygunge", "Behala", "Ballygunge"],
-    }
-    city_base_rent = {"Mumbai": 30000, "Delhi": 22000, "Bangalore": 25000,
-                      "Hyderabad": 18000, "Chennai": 16000, "Kolkata": 12000}
-    city_col = np.random.choice(cities, n, p=city_w)
+        # Ekstrak Floor & Total Floors dari kolom string (contoh: "2 out of 5")
+        df["Total Floors"] = (
+            df["Floor"]
+            .str.extract(r"out of (\d+)", expand=False)
+            .fillna(1)
+            .astype(int)
+        )
+        df["Floor"] = (
+            df["Floor"]
+            .str.extract(r"^(\d+)", expand=False)
+            .fillna(0)
+            .astype(int)
+        )
 
-    bhk = np.random.choice([1, 2, 3, 4, 5], n, p=[0.25, 0.38, 0.25, 0.08, 0.04])
-    bathroom = np.clip(bhk + np.random.choice([0, 1], n, p=[0.6, 0.4]), 1, 6).astype(int)
-    size = bhk * np.random.uniform(250, 500, n) + np.random.normal(0, 80, n)
-    size = np.clip(size, 200, 8000).astype(int)
-    area_type = np.random.choice(["Carpet Area", "Super Area"], n, p=[0.45, 0.55])
-    furnish = np.random.choice(furnishing, n, p=[0.40, 0.35, 0.25])
-    tenant = np.random.choice(tenant_type, n, p=[0.35, 0.40, 0.25])
-    floors = np.random.randint(1, 15, n)
-    floor_num = np.array([np.random.randint(0, f + 1) for f in floors])
-    contact = np.random.choice(["Contact Owner", "Contact Agent"], n, p=[0.65, 0.35])
-    locality = np.array([np.random.choice(area_locality_map[c]) for c in city_col])
+        # Fitur musiman dari kolom tanggal
+        df["Posted On"] = pd.to_datetime(df["Posted On"], errors="coerce")
+        months = df["Posted On"].dt.month.fillna(6).astype(int)
+        df["month_sin"] = np.sin(2 * np.pi * months / 12)
+        df["month_cos"] = np.cos(2 * np.pi * months / 12)
 
-    # Simulate month seasonality
-    months = np.random.randint(1, 13, n)
-    month_sin = np.sin(2 * np.pi * months / 12)
-    month_cos = np.cos(2 * np.pi * months / 12)
+        # Hapus baris dengan nilai penting yang kosong
+        required_cols = ["BHK", "Rent", "Size", "City", "Furnishing Status",
+                         "Tenant Preferred", "Bathroom", "Point of Contact",
+                         "Area Type", "Area Locality", "Floor", "Total Floors"]
+        df = df.dropna(subset=required_cols).reset_index(drop=True)
 
-    # Build rent with feature influence
-    base = np.array([city_base_rent[c] for c in city_col], dtype=float)
-    rent = (base
-            + bhk * 4500
-            + size * 4.5
-            + bathroom * 1200
-            + np.where(furnish == "Furnished", 8000, np.where(furnish == "Semi-Furnished", 3500, 0))
-            + floor_num * 300
-            + np.where(contact == "Contact Agent", 2000, 0)
-            + np.random.normal(0, 3500, n))
-    rent = np.clip(rent, 1200, 2999999).astype(int)
+        st.sidebar.success("✅ Dataset asli dimuat")
 
-    df = pd.DataFrame({
-        "BHK": bhk, "Rent": rent, "Size": size,
-        "Area Type": area_type, "Area Locality": locality,
-        "City": city_col, "Furnishing Status": furnish,
-        "Tenant Preferred": tenant, "Bathroom": bathroom,
-        "Point of Contact": contact, "Floor": floor_num,
-        "Total Floors": floors, "month_sin": month_sin, "month_cos": month_cos,
-    })
+    else:
+        st.sidebar.info("ℹ️ CSV tidak ditemukan")
     return df
 
 
