@@ -219,8 +219,8 @@ if page == "🔮 Prediksi Harga":
 
             st.markdown(f"""
             <div class="predict-card">
-                <div style="font-size:1rem;opacity:.85;margin-bottom:4px">💡 Estimasi Harga Sewa</div>
-                <div class="predict-price">₹{pred:,.0f}</div>
+                <div style="font-size:1rem;opacity:.85;margin-bottom:4px">💡 Estimasi Harga Sewa(Dalam Juta)</div>
+                <div class="predict-price">Rp{pred:,.0f}</div>
                 <div style="opacity:.8;margin-top:6px">per bulan</div>
                 <hr style="border-color:rgba(255,255,255,0.3);margin:16px 0">
                 <div style="display:flex;justify-content:space-around;font-size:.85rem">
@@ -237,7 +237,7 @@ if page == "🔮 Prediksi Harga":
             fig_gauge = go.Figure(go.Indicator(
                 mode="gauge+number",
                 value=pred,
-                number={"prefix": "₹", "valueformat": ",.0f"},
+                number={"prefix": "Rp", "valueformat": ",.2f"},
                 gauge={
                     "axis": {"range": [low * 0.8, high * 1.2]},
                     "bar": {"color": "#667eea"},
@@ -255,7 +255,7 @@ if page == "🔮 Prediksi Harga":
             ))
             fig_gauge.update_layout(height=220, margin=dict(t=20, b=10, l=20, r=20))
             st.plotly_chart(fig_gauge, use_container_width=True)
-            st.caption(f"Kisaran wajar: ₹{low:,.0f} – ₹{high:,.0f}")
+            st.caption(f"Kisaran wajar: Rp{low:,.0f} – Rp{high:,.0f}")
 
         else:
             st.info("⬅️ Isi detail properti di sebelah kiri, lalu klik **Prediksi**.")
@@ -264,7 +264,7 @@ if page == "🔮 Prediksi Harga":
             fig_box = px.box(df, x="City", y="Rent", color="City",
                              color_discrete_sequence=px.colors.qualitative.Pastel)
             fig_box.update_layout(showlegend=False, height=320,
-                                  margin=dict(t=10, b=10), yaxis_title="Rent (₹)")
+                                  margin=dict(t=10, b=10), yaxis_title="Rent (Rp)")
             st.plotly_chart(fig_box, use_container_width=True)
 
 
