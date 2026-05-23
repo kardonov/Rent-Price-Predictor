@@ -67,7 +67,7 @@ st.markdown("""
 
 # ── Load & Preprocess Data ────────────────────────────────────────────────────
 @st.cache_data
-def load_and_preprocess(csv_path: str = "House_Rent_Dataset_Indonesia.csv"):
+def load_and_preprocess(csv_path: str = "House_Rent_Dataset_Indonesia_Rupiah.csv"):
     """
     Load dataset asli jika CSV tersedia, fallback ke data sintetik.
     """
@@ -89,8 +89,8 @@ def load_and_preprocess(csv_path: str = "House_Rent_Dataset_Indonesia.csv"):
         )
 
         # Fitur musiman dari kolom tanggal
-        df["Posted On"] = pd.to_datetime(df["Posted On"], errors="coerce")
-        months = df["Posted On"].dt.month.fillna(6).astype(int)
+        ["Posted On"] = pd.to_datetime(["Posted On"], errors="coerce")
+        months = ["Posted On"].dt.month.fillna(6).astype(int)
         df["month_sin"] = np.sin(2 * np.pi * months / 12)
         df["month_cos"] = np.cos(2 * np.pi * months / 12)
 
